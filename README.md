@@ -33,6 +33,16 @@ cd koyanagi-config
 hyprctl reload
 ```
 
+## Revert
+
+To revert to your previous configuration:
+```bash
+./install.sh --revert
+hyprctl reload
+```
+
+This restores the most recent backup from `~/.config/hypr/backup-*/`.
+
 ## What the Script Does
 
 - Creates a backup of your existing `looknfeel.lua` and `rules.lua`
