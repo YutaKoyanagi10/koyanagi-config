@@ -7,16 +7,42 @@ set -euo pipefail
 # - Hyprland gaps, borders, rounding, blur, opacity
 # - Layer rules for shell blur
 #
-# Usage: ./install.sh
+# Usage:
+#   ./install.sh          # Apply koyanagi config
+#   ./install.sh --revert # Revert to previous config
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_DIR="$HOME/.config/hypr/backup-$(date +%s)"
 
 # Check if Omarchy is installed
 if [[ ! -d "$HOME/.config/hypr" ]]; then
     echo "Error: ~/.config/hypr not found. Is Omarchy installed?"
     exit 1
 fi
+
+# Revert mode
+if [[ "${1:-}" == "--revert" ]]; then
+    LATEST_BACKUP=$(ls -td "$HOME/.config/hypr/backup-"* 2>/dev/null | head -1)
+    if [[ -z "$LATEST_BACKUP" ]]; then
+        echo "Error: No backup found in ~/.config/hypr/backup-*"
+        exit 1
+    fi
+    echo "Restoring from: $LATEST_BACKUP"
+    for file in looknfeel.lua rules.lua; do
+        if [[ -f "$LATEST_BACKUP/$file" ]]; then
+            cp "$LATEST_BACKUP/$file" "$HOME/.config/hypr/$file"
+            echo "Restored $file"
+        else
+            rm -f "$HOME/.config/hypr/$file"
+            echo "Removed $file (was not in backup)"
+        fi
+    done
+    echo ""
+    echo "Reverted successfully! Run: hyprctl reload"
+    exit 0
+fi
+
+# Install mode
+BACKUP_DIR="$HOME/.config/hypr/backup-$(date +%s)"
 
 # Create backup directory
 mkdir -p "$BACKUP_DIR"
@@ -100,3 +126,6 @@ echo "Backup saved to: $BACKUP_DIR"
 echo ""
 echo "To reload Hyprland config, run:"
 echo "  hyprctl reload"
+echo ""
+echo "To revert, run:"
+echo "  ./install.sh --revert"
