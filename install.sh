@@ -27,15 +27,14 @@ if [[ "${1:-}" == "--revert" ]]; then
         exit 1
     fi
     echo "Restoring from: $LATEST_BACKUP"
-    for file in looknfeel.lua rules.lua; do
-        if [[ -f "$LATEST_BACKUP/$file" ]]; then
-            cp "$LATEST_BACKUP/$file" "$HOME/.config/hypr/$file"
-            echo "Restored $file"
-        else
-            rm -f "$HOME/.config/hypr/$file"
-            echo "Removed $file (was not in backup)"
-        fi
-    done
+    if [[ -f "$LATEST_BACKUP/looknfeel.lua" ]]; then
+        cp "$LATEST_BACKUP/looknfeel.lua" "$HOME/.config/hypr/looknfeel.lua"
+        echo "Restored looknfeel.lua"
+    else
+        rm -f "$HOME/.config/hypr/looknfeel.lua"
+        echo "Removed looknfeel.lua (was not in backup)"
+    fi
+    rm -rf "$HOME/.config/hypr/backup-"*
     echo ""
     echo "Reverted successfully! Run: hyprctl reload"
     exit 0
@@ -48,22 +47,30 @@ BACKUP_DIR="$HOME/.config/hypr/backup-$(date +%s)"
 mkdir -p "$BACKUP_DIR"
 echo "Backing up existing config to: $BACKUP_DIR"
 
-# Backup existing files if they exist
-for file in looknfeel.lua rules.lua; do
-    if [[ -f "$HOME/.config/hypr/$file" ]]; then
-        cp "$HOME/.config/hypr/$file" "$BACKUP_DIR/$file"
-    fi
-done
+# Backup existing file if it exists
+if [[ -f "$HOME/.config/hypr/looknfeel.lua" ]]; then
+    cp "$HOME/.config/hypr/looknfeel.lua" "$BACKUP_DIR/looknfeel.lua"
+fi
 
 # Write looknfeel.lua
 cat > "$HOME/.config/hypr/looknfeel.lua" << 'EOF'
 -- Koyanagi Theme - Hyprland Look and Feel
 -- https://wiki.hypr.land/Configuring/Basics/Variables/#general
+
+local active_border_color = { colors = { "rgb(D8D8D8)", "rgb(F0F0F0)", "rgb(FFFFFF)", "rgb(C8C8C8)" }, angle = 45 }
+local inactive_border_color = "rgba(808080aa)"
+
 hl.config({
   general = {
     gaps_in = 4,
     gaps_out = 6,
     border_size = 1,
+
+    col = {
+      active_border = active_border_color,
+      inactive_border = inactive_border_color,
+    },
+
     resize_on_border = true,
     extend_border_grab_area = 15,
     allow_tearing = false,
@@ -98,13 +105,16 @@ hl.config({
     inactive_opacity = 0.65,
     fullscreen_opacity = 1.0,
   },
+
+  group = {
+    col = {
+      border_active = active_border_color,
+      border_inactive = inactive_border_color,
+    },
+  },
 })
-EOF
 
-# Write rules.lua
-cat > "$HOME/.config/hypr/rules.lua" << 'EOF'
--- Koyanagi Theme - Layer Rules for Shell Blur
-
+-- Blur on all shell surfaces
 local shell_layers = {
   "omarchy-bar", "omarchy-menu", "omarchy-notifications",
   "omarchy-clipboard", "omarchy-emojis", "omarchy-osd",
@@ -116,7 +126,6 @@ local blur_rules = {}
 for _, ns in ipairs(shell_layers) do
   table.insert(blur_rules, { rule = "blur", match = { namespace = ns } })
   table.insert(blur_rules, { rule = "ignorezero", match = { namespace = ns } })
-  table.insert(blur_rules, { rule = "rounding", value = 10, match = { namespace = ns } })
 end
 
 hl.config({ layerrule = blur_rules })
