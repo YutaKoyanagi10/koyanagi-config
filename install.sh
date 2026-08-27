@@ -116,6 +116,7 @@ local blur_rules = {}
 for _, ns in ipairs(shell_layers) do
   table.insert(blur_rules, { rule = "blur", match = { namespace = ns } })
   table.insert(blur_rules, { rule = "ignorezero", match = { namespace = ns } })
+  table.insert(blur_rules, { rule = "rounding", value = 10, match = { namespace = ns } })
 end
 
 hl.config({ layerrule = blur_rules })
